@@ -38,7 +38,7 @@ func NewNginxHandler(config *config.ServerConfig) *nginx {
 	return &balancer
 }
 
-func (n nginx) Create(config *config.WebsiteConfig) error {
+func (n *nginx) Create(config *config.WebsiteConfig) error {
 	loader := n.loaders[config.LoadBalancer.Type]
 	if loader == nil {
 		return errors.New("config type is invalid")
@@ -54,10 +54,16 @@ func (n nginx) Create(config *config.WebsiteConfig) error {
 	return nil
 }
 
-func (n nginx) Update(config *config.WebsiteConfig) error {
+func (n *nginx) Update(config *config.WebsiteConfig) error {
 	return nil
 }
 
-func (n nginx) Delete(config *config.WebsiteConfig) error {
+func (n *nginx) Delete(config *config.WebsiteConfig) error {
+	return nil
+}
+
+func (n *nginx) GetAll() []config.LoadBalancer { return nil }
+
+func (n *nginx) Get(id string) *config.LoadBalancer {
 	return nil
 }

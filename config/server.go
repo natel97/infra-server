@@ -9,4 +9,5 @@ type ServerConfig struct {
 	LoadBalancerDirectory string `mapstructure:"LOAD_BALANCER_DIRECTORY"`
 	Environment           string `mapstructure:"ENVIRONMENT"`
 	MaxUploadSize         uint   `mapstructure:"MAX_UPLOAD_SIZE_MB"`
+	CloudflareAPIToken    string `mapstructure:"CLOUDFLARE_API_TOKEN"`
 }

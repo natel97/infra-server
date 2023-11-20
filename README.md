@@ -57,3 +57,7 @@ su - system-control $VALUE run server.go
 
 
 ```
+
+## ENV
+
+Override environment variables with local.env

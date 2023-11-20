@@ -104,16 +104,24 @@ func loggerMiddleware() gin.HandlerFunc {
 
 func loadENV() *config.ServerConfig {
 	cfg := &config.ServerConfig{}
-
-	viper.SetConfigName("config")
-	viper.SetConfigType("env")
-	viper.AddConfigPath(".")
-	err := viper.ReadInConfig()
+	prodConfig := viper.New()
+	prodConfig.SetConfigName("config")
+	prodConfig.SetConfigType("env")
+	prodConfig.AddConfigPath(".")
+	err := prodConfig.ReadInConfig()
 	if err != nil {
 		panic(fmt.Errorf("fatal error config file: %w", err))
 	}
 
-	viper.Unmarshal(&cfg)
+	localConfig := viper.New()
+	localConfig.SetConfigName("local")
+	localConfig.SetConfigType("env")
+	localConfig.AddConfigPath(".")
+	localConfig.ReadInConfig()
+
+	prodConfig.MergeConfigMap(localConfig.AllSettings())
+	prodConfig.Unmarshal(&cfg)
+
 	return cfg
 }
 
@@ -124,9 +132,18 @@ func main() {
 	server := gin.New()
 	server.Use(gin.Recovery())
 	server.Use(loggerMiddleware())
+	cfg := loadENV()
+
+	// api := cloudflare.NewAPI(&cloudflare.Config{
+	// 	Token: cfg.CloudflareAPIToken,
+	// })
+
+	// err := api.GetRecords()
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// }
 
 	apiGroup := server.Group("api")
-	cfg := loadENV()
 	server.MaxMultipartMemory = int64(cfg.MaxUploadSize << 20)
 	attachAPIs(apiGroup, cfg)
 
