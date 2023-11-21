@@ -16,8 +16,11 @@ import (
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 	"natelubitz.com/config"
 	v1 "natelubitz.com/routes/v1"
+	"natelubitz.com/services/dns/cloudflare"
 )
 
 func readPipe(reader io.Reader, prefix string) {
@@ -125,6 +128,21 @@ func loadENV() *config.ServerConfig {
 	return cfg
 }
 
+type migratable interface {
+	Migrate(db *gorm.DB) error
+}
+
+func migrate(db *gorm.DB, repositories []migratable) error {
+	for _, repository := range repositories {
+		err := repository.Migrate(db)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
@@ -134,19 +152,30 @@ func main() {
 	server.Use(loggerMiddleware())
 	cfg := loadENV()
 
-	// api := cloudflare.NewAPI(&cloudflare.Config{
-	// 	Token: cfg.CloudflareAPIToken,
-	// })
+	db, err := gorm.Open(sqlite.Open("data.db"), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect database")
+	}
 
-	// err := api.GetRecords()
-	// if err != nil {
-	// 	fmt.Println(err.Error())
-	// }
+	cloudflareRepository := cloudflare.NewV1Repository(db)
+
+	migrate(db, []migratable{
+		cloudflareRepository,
+	})
+
+	api := cloudflare.NewAPI(&cloudflare.Config{
+		Token: cfg.CloudflareAPIToken,
+	})
+
+	service := cloudflare.NewV1Service(cloudflareRepository, api, 10)
+
+	service.GetRecords()
 
 	apiGroup := server.Group("api")
 	server.MaxMultipartMemory = int64(cfg.MaxUploadSize << 20)
 	attachAPIs(apiGroup, cfg)
 
 	attachFrontend(server, cfg.Environment == "development")
+	fmt.Println("Server started on port: ", cfg.Port)
 	server.Run(fmt.Sprintf(":%d", cfg.Port))
 }

@@ -1,3 +1,5 @@
 frontend/dist
 frontend/node_modules
 local.env
+
+data.db

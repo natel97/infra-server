@@ -36,7 +36,7 @@ type dnsRecordAPI struct {
 	TTL         uint   `json:"ttl"`
 }
 
-func (api *v1API) getZones() ([]zone, error) {
+func (api *v1API) GetZones() ([]zone, error) {
 	bytes, err := api.handleAPICall("GET", apiZone, nil)
 	if err != nil {
 		return nil, err
@@ -56,6 +56,7 @@ func (api *v1API) handleDNSAPICall(zone string, method string, route string, bod
 	if route != "" {
 		url = fmt.Sprintf("%s/%s", url, route)
 	}
+
 	return api.handleAPICall(method, url, body)
 }
 
@@ -64,7 +65,7 @@ func (api *v1API) handleAPICall(method string, route string, body []byte) ([]byt
 
 	req, err := http.NewRequest(method, route, bodyReader)
 	if err != nil {
-		fmt.Print(err.Error())
+		return nil, err
 	}
 
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", api.config.Token))
@@ -78,16 +79,17 @@ func (api *v1API) handleAPICall(method string, route string, body []byte) ([]byt
 	if readErr != nil {
 		return []byte{}, readErr
 	}
-	fmt.Println(string(body))
+
 	return body, nil
 }
 
 type API interface {
-	CreateRecord(record dnsRecordAPI) error
-	UpdateRecord(id string, record dnsRecordAPI) error
-	DeleteRecord(id string) error
-	GetRecords() error
-	GetRecord(id string) error
+	GetZones() ([]zone, error)
+	CreateRecord(zone string, record dnsRecordAPI) error
+	UpdateRecord(zone string, id string, record dnsRecordAPI) error
+	DeleteRecord(zone string, id string) error
+	GetRecords(zone string) error
+	GetRecord(zone string, id string) error
 }
 
 type Config struct {
