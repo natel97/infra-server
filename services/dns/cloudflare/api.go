@@ -83,6 +83,7 @@ func (api *v1API) handleAPICall(method string, route string, body []byte) ([]byt
 	return body, nil
 }
 
+//go:generate mockgen -source=api.go -destination=api_mock.go -package=cloudflare
 type API interface {
 	GetZones() ([]zone, error)
 	CreateRecord(zone string, record dnsRecordAPI) error

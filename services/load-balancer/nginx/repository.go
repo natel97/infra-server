@@ -20,8 +20,9 @@ func (repo *v1Repository) Migrate() error {
 	return nil
 }
 
-func (repo *v1Repository) CreateRecord() {
+func (repo *v1Repository) CreateRecord() error {
 	// repo.db.Create()
+	return nil
 }
 
 func NewV1Repository(db *gorm.DB) *v1Repository {
