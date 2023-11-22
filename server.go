@@ -13,14 +13,18 @@ import (
 	"os/exec"
 	"strings"
 
+	"infra-server/config"
+	v1 "infra-server/routes/v1"
+	"infra-server/routes/v1/service"
+	"infra-server/services/dns/cloudflare"
+	"infra-server/services/load-balancer/nginx"
+	"infra-server/utils"
+
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"natelubitz.com/config"
-	v1 "natelubitz.com/routes/v1"
-	"natelubitz.com/services/dns/cloudflare"
 )
 
 func readPipe(reader io.Reader, prefix string) {
@@ -81,9 +85,9 @@ func attachFrontend(server *gin.Engine, dev bool) {
 	}
 }
 
-func attachAPIs(group *gin.RouterGroup, cfg *config.ServerConfig) {
+func attachAPIs(group *gin.RouterGroup, cfg *config.ServerConfig, service service.Service) {
 	v1Group := group.Group("/v1")
-	v1.Handle(v1Group, cfg)
+	v1.Handle(v1Group, cfg, service)
 }
 
 func loggerMiddleware() gin.HandlerFunc {
@@ -167,13 +171,19 @@ func main() {
 		Token: cfg.CloudflareAPIToken,
 	})
 
-	service := cloudflare.NewV1Service(cloudflareRepository, api, 10)
+	ip := utils.GetPublicIP()
 
-	service.GetRecords()
+	cloudflareService := cloudflare.NewV1Service(cloudflareRepository, api, &cloudflare.ServiceConfig{
+		IPAddress: ip,
+		Refresh:   10,
+	})
+
+	nginxService := nginx.NewNginxHandler(cfg)
+	service := service.NewV1Service(cloudflareService, nginxService)
 
 	apiGroup := server.Group("api")
 	server.MaxMultipartMemory = int64(cfg.MaxUploadSize << 20)
-	attachAPIs(apiGroup, cfg)
+	attachAPIs(apiGroup, cfg, service)
 
 	attachFrontend(server, cfg.Environment == "development")
 	fmt.Println("Server started on port: ", cfg.Port)

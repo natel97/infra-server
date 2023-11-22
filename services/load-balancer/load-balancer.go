@@ -1,11 +1,17 @@
 package loadbalancer
 
-import "natelubitz.com/config"
+import "infra-server/config"
 
 type Service interface {
-	Create(config *config.LoadBalancer) error
-	Update(config *config.LoadBalancer) error
-	Delete(config *config.LoadBalancer) error
-	GetAll() []config.LoadBalancer
-	Get(id string) config.LoadBalancer
+	// Create(config *config.WebsiteConfig) error
+	// Update(config *config.LoadBalancer) error
+	// Delete(config *config.WebsiteConfig) error
+	// GetAll() ([]config.LoadBalancer, error)
+	// Get(id string) *config.LoadBalancer
+
+	Create(config *config.WebsiteConfig) error
+	Update(config *config.WebsiteConfig) error
+	Delete(config *config.WebsiteConfig) error
+	GetAll() ([]config.LoadBalancer, error)
+	Get(id string) *config.LoadBalancer
 }

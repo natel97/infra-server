@@ -1,27 +1,56 @@
 package service
 
-import "natelubitz.com/config"
+import (
+	"fmt"
 
-type service interface {
-	Create(*config.WebsiteConfig) error
-	Update(*config.WebsiteConfig) error
-	Delete(*config.WebsiteConfig) error
+	"infra-server/config"
+	"infra-server/services/dns"
+	loadbalancer "infra-server/services/load-balancer"
+)
+
+type Service interface {
+	CreateService(cfg *config.WebsiteConfig) error
+	GetServices() ([]config.WebsiteConfig, error)
 }
 
-type serviceHandler struct {
-	services map[string]service
+type v1Service struct {
+	// services map[string]service
+	dnsService          dns.Service
+	loadBalancerService loadbalancer.Service
 }
 
-func (handler *serviceHandler) AddService(name string, service service) {
-	handler.services[name] = service
-}
-
-func CreateServiceHandler() *serviceHandler {
-	return &serviceHandler{
-		services: map[string]service{},
+func NewV1Service(dnsService dns.Service, loadBalancerService loadbalancer.Service) *v1Service {
+	return &v1Service{
+		dnsService:          dnsService,
+		loadBalancerService: loadBalancerService,
 	}
 }
 
-func CreateFromConfig(cfg *config.WebsiteConfig) {
+func (service *v1Service) CreateService(cfg *config.WebsiteConfig) error {
+	err := service.loadBalancerService.Create(cfg)
+	if err != nil {
+		return err
+	}
 
+	err = service.dnsService.Create(cfg)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (service *v1Service) GetServices() ([]config.WebsiteConfig, error) {
+	balancer, err := service.loadBalancerService.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	dns, err := service.dnsService.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println(balancer, dns)
+	return nil, nil
 }

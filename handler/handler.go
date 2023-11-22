@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"natelubitz.com/config"
+	"infra-server/config"
 )
 
 type Handler interface {

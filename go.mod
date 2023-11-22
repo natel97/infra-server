@@ -1,4 +1,4 @@
-module natelubitz.com
+module infra-server
 
 go 1.21.4
 

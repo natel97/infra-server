@@ -13,7 +13,8 @@ type DNSRecord struct {
 
 type Repository interface {
 	GetZones() ([]Zone, error)
-	GetRecords() ([]DNSRecord, error)
+	GetRecords(string) ([]DNSRecord, error)
+	GetAllRecords() ([]DNSRecord, error)
 	UpdateRecord()
 	DeleteZone()
 	DeleteRecord()

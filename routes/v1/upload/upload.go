@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"infra-server/config"
+
 	"github.com/gin-gonic/gin"
-	"natelubitz.com/config"
 )
 
 type BindFile struct {

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"natelubitz.com/config"
-	"natelubitz.com/services/load-balancer/nginx/filegen"
+	"infra-server/config"
+	"infra-server/services/load-balancer/nginx/filegen"
 )
 
 type FileGen interface {
@@ -62,7 +62,7 @@ func (n *nginx) Delete(config *config.WebsiteConfig) error {
 	return nil
 }
 
-func (n *nginx) GetAll() []config.LoadBalancer { return nil }
+func (n *nginx) GetAll() ([]config.LoadBalancer, error) { return nil, nil }
 
 func (n *nginx) Get(id string) *config.LoadBalancer {
 	return nil

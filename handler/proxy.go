@@ -1,6 +1,6 @@
 package handler
 
-import "natelubitz.com/config"
+import "infra-server/config"
 
 type proxySite struct {
 }

@@ -3,7 +3,7 @@ package filegen
 import (
 	"fmt"
 
-	"natelubitz.com/config"
+	"infra-server/config"
 )
 
 var proxySiteConfig string = `

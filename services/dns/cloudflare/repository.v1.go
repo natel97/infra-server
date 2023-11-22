@@ -66,7 +66,27 @@ func (repo *v1Repository) GetZones() ([]Zone, error) {
 	return zones, nil
 }
 
-func (repo *v1Repository) GetRecords() ([]DNSRecord, error) {
+func (repo *v1Repository) GetRecords(zone string) ([]DNSRecord, error) {
+	dbRecords := []cloudflareDNSRecord{}
+	tx := repo.db.Where("id = ?", zone).Scan(&dbRecords)
+
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+
+	zones := []DNSRecord{}
+	for _, r := range dbRecords {
+		zones = append(zones, DNSRecord{
+			ID:     r.ID,
+			Domain: r.Name,
+			Zone:   r.ZoneID,
+		})
+	}
+
+	return zones, nil
+}
+
+func (repo *v1Repository) GetAllRecords() ([]DNSRecord, error) {
 	dbRecords := []cloudflareDNSRecord{}
 	tx := repo.db.Find(&dbRecords)
 
