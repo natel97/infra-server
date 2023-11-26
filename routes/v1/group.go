@@ -11,9 +11,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Handle(route *gin.RouterGroup, cfg *config.ServerConfig, service service.Service) {
+func Handle(route *gin.RouterGroup, cfg *config.ServerConfig, s service.Service) {
 	route.POST("service", func(ctx *gin.Context) {
-		body := &config.WebsiteConfig{}
+		body := &service.CreateServiceBody{}
 		err := ctx.ShouldBindJSON(body)
 		if err != nil {
 			fmt.Print(err)
@@ -21,19 +21,17 @@ func Handle(route *gin.RouterGroup, cfg *config.ServerConfig, service service.Se
 			return
 		}
 
-		err = service.CreateService(body)
+		created, err := s.CreateService(body)
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, err)
+			ctx.JSON(http.StatusBadRequest, err)
 		}
 
 		// nginxConfig := s.CreateService(body)
-		ctx.JSON(200, map[string]interface{}{
-			"config": body,
-		})
+		ctx.JSON(200, created)
 	})
 
 	route.GET("service", func(ctx *gin.Context) {
-		vals, err := service.GetServices()
+		vals, err := s.GetServices()
 
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, err)

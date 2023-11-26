@@ -14,6 +14,10 @@ type LoadBalancer struct {
 	ProxyConfig  ProxyConfig  `json:"proxyConfig"`
 }
 
+type Environment struct {
+	Name string `json:"name"`
+}
+
 type StaticConfig struct {
 	IsSPA bool `json:"isSPA"`
 }

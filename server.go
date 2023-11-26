@@ -174,8 +174,8 @@ func main() {
 	ip := utils.GetPublicIP()
 
 	cloudflareService := cloudflare.NewV1Service(cloudflareRepository, api, &cloudflare.ServiceConfig{
-		IPAddress: ip,
-		Refresh:   10,
+		IPAddress:      ip,
+		RefreshSeconds: 60 * 60,
 	})
 
 	nginxService := nginx.NewNginxHandler(cfg)

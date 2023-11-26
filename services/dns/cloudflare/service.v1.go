@@ -12,8 +12,8 @@ import (
 )
 
 type ServiceConfig struct {
-	IPAddress string
-	Refresh   uint
+	IPAddress      string
+	RefreshSeconds uint
 }
 
 type v1Service struct {
@@ -70,8 +70,21 @@ func (service *v1Service) Create(cfg *config.WebsiteConfig) error {
 }
 
 func (service *v1Service) GetAll() ([]config.WebsiteConfig, error) {
+	records, err := service.repository.GetAllRecords()
 
-	return nil, nil
+	if err != nil {
+		return nil, err
+	}
+
+	sites := []config.WebsiteConfig{}
+
+	for _, record := range records {
+		sites = append(sites, config.WebsiteConfig{
+			Domain:       record.Domain,
+			LoadBalancer: config.LoadBalancer{},
+		})
+	}
+	return sites, nil
 }
 
 // func (service *v1Service) UpdateRecord() error {
@@ -108,7 +121,7 @@ func NewV1Service(repo Repository, api API, config *ServiceConfig) *v1Service {
 		repository: repo,
 	}
 
-	ticker := time.NewTicker(time.Duration(config.Refresh) * time.Second)
+	ticker := time.NewTicker(time.Duration(config.RefreshSeconds) * time.Second)
 	quit := make(chan struct{})
 	go func() {
 		for {
