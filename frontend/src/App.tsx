@@ -5,6 +5,7 @@ import { Suspense, lazy } from "react";
 
 const Deployments = lazy(() => import("./page/home"));
 const NewDeployment = lazy(() => import("./page/new"));
+const DeploymentDetails = lazy(() => import("./page/deployment/id"));
 
 const NotFoundComponent = () => {
   return (
@@ -20,17 +21,30 @@ const App = () => {
       <Provider store={store}>
         <BrowserRouter>
           <Routes>
-            <Route path="/">
-              <Suspense>
-                <Deployments />
-              </Suspense>
-            </Route>
-
-            <Route path="/new/*">
-              <Suspense>
-                <NewDeployment />
-              </Suspense>
-            </Route>
+            <Route
+              path="/"
+              element={
+                <Suspense>
+                  <Deployments />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/new/*"
+              element={
+                <Suspense>
+                  <NewDeployment />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/deployment/:id"
+              element={
+                <Suspense>
+                  <DeploymentDetails />
+                </Suspense>
+              }
+            />
             <Route path="*" Component={NotFoundComponent} />
           </Routes>
         </BrowserRouter>

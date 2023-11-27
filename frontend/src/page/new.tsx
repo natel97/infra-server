@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { API } from "../api";
 import { addDeployment } from "../redux/deployment.reducer";
+import { Button } from "../components/generic";
 
 const CreateDeploymentsForm = () => {
   const [name, setName] = useState("");
@@ -19,7 +20,7 @@ const CreateDeploymentsForm = () => {
     API.createDeployment({ name, type })
       .then((response) => {
         dispatch(addDeployment(response));
-        navigate("/");
+        navigate(`/deployment/${response.id}`);
       })
       .catch((e: unknown) => {
         setError(JSON.stringify(e));
@@ -44,7 +45,9 @@ const CreateDeploymentsForm = () => {
         <option value="static-website" label="Static Website" />
         <option value="kubernetes-deployment" label="Kubernetes Deployment" />
       </select>
-      <input type="button" value="Add Service" onClick={() => submitForm()} />
+      <Button padding="md" onClick={() => submitForm()}>
+        Add Service
+      </Button>
       {error && <p>{error}</p>}
     </div>
   );
