@@ -1,86 +1,42 @@
-import { useEffect, useState } from "react";
-import "./App.css";
-import { API, GetDeploymentsResponse } from "./api";
+import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
+import { Provider } from "react-redux";
+import store from "./redux/store";
+import { Suspense, lazy } from "react";
 
-type ExistingSitesProps = {
-  deployments: GetDeploymentsResponse[];
-};
-const ExistingSites = ({
-  deployments = [],
-}: ExistingSitesProps): JSX.Element => {
+const Deployments = lazy(() => import("./page/home"));
+const NewDeployment = lazy(() => import("./page/new"));
+
+const NotFoundComponent = () => {
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
-      {deployments.map((value) => (
-        <div
-          style={{
-            boxShadow: "0px 0px 6px 6px rgba(96, 96, 96, 0.25)",
-            borderRadius: "4px",
-            padding: "12px",
-            margin: "8px",
-          }}
-        >
-          <h2>{value.name}</h2>
-          <div>{value.type}</div>
-        </div>
-      ))}
-    </div>
+    <h1>
+      Path not found :/ <Link to="/">Go back home</Link>
+    </h1>
   );
 };
 
-const CreateDeploymentsForm = ({ addDeployment }) => {
-  const [name, setName] = useState("");
-  const [type, setType] = useState("static-website");
-  const [error, setError] = useState("");
-
-  const submitForm = () => {
-    if (!name || !type) {
-      return;
-    }
-
-    API.createDeployment({ name, type })
-      .then((response) => {
-        setName("");
-        setError("");
-        addDeployment(response);
-      })
-      .catch((e: any) => {
-        setError(JSON.stringify(e));
-      });
-  };
+const App = () => {
   return (
     <div>
-      <input
-        onChange={(e) => setName(e.target.value)}
-        type="text"
-        value={name}
-        placeholder="Name"
-      />
-      <select value={type} onChange={(e) => setType(e.target.value)}>
-        <option value="static-website" label="Static Website" />
-        <option value="kubernetes-deployment" label="Kubernetes Deployment" />
-      </select>
-      <input type="button" value="Add Service" onClick={() => submitForm()} />
-      {error && <p>{error}</p>}
+      <Provider store={store}>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/">
+              <Suspense>
+                <Deployments />
+              </Suspense>
+            </Route>
+
+            <Route path="/new/*">
+              <Suspense>
+                <NewDeployment />
+              </Suspense>
+            </Route>
+            <Route path="*" Component={NotFoundComponent} />
+          </Routes>
+        </BrowserRouter>
+      </Provider>
     </div>
   );
 };
-
-function App() {
-  const [deployments, setDeployments] = useState<GetDeploymentsResponse[]>([]);
-  useEffect(() => {
-    API.getDeployments().then((deployments) => setDeployments(deployments));
-  }, []);
-
-  return (
-    <div>
-      <ExistingSites deployments={deployments} />
-      <CreateDeploymentsForm
-        addDeployment={(deployment: GetDeploymentsResponse) =>
-          setDeployments([...deployments, deployment])
-        }
-      />
-    </div>
-  );
-}
 
 export default App;
