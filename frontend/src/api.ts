@@ -3,7 +3,22 @@ export type GetDeploymentsResponse = {
   name: string;
   type: string;
   visibility: string;
-  environments?: string[];
+  environments?: EnvironmentStub[];
+};
+
+export type EnvironmentStub = {
+  id: string;
+  name: string;
+  status: string;
+  lastDeploy: string;
+};
+
+export type GetSingleDeploymentResponse = {
+  id: string;
+  name: string;
+  type: string;
+  visibility: string;
+  environments?: EnvironmentStub[];
 };
 
 export type CreateDeploymentRequest = {
@@ -20,6 +35,17 @@ export class APIHandler {
 
   getDeployments(): Promise<GetDeploymentsResponse[]> {
     return this.fetchHandler("/api/v1/service").then((val) => val.json());
+  }
+
+  getDeploymentByID(id: string): Promise<GetSingleDeploymentResponse> {
+    return this.fetchHandler(`/api/v1/service/${id}`).then((val) => val.json());
+  }
+
+  createEnvironment(id: string, name: string): Promise<void> {
+    return this.fetchHandler(`/api/v1/service/${id}/environment`, {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    }).then((val) => val.json());
   }
 
   createDeployment(

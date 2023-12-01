@@ -91,6 +91,10 @@ type DNSLink struct {
 	RedirectTo string `json:"redirectTo"`
 }
 
+type CreateEnvironmentBody struct {
+	Name string `json:"name"`
+}
+
 type CreateServiceBody struct {
 	Name string `json:"name"`
 	Type string `json:"type"`

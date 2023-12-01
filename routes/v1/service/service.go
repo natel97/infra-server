@@ -11,6 +11,8 @@ import (
 type Service interface {
 	CreateService(cfg *CreateServiceBody) (*GetServiceResponse, error)
 	GetServices() ([]GetServiceResponse, error)
+	GetService(id string) (*GetSingleServiceResponse, error)
+	CreateEnvironment(id string, environment *CreateEnvironmentBody) (*EnvironmentStub, error)
 }
 
 var SettingsForType = map[string][]DeploySetting{
@@ -25,9 +27,21 @@ var SettingsForType = map[string][]DeploySetting{
 	"kubernetes-deployment": {
 		{
 			ID:    "1",
-			Name:  "Is SPA",
-			Type:  "boolean",
-			Value: false,
+			Name:  "Port",
+			Type:  "number",
+			Value: 3000,
+		},
+		{
+			ID:    "2",
+			Name:  "Healthcheck Endpoint",
+			Type:  "string",
+			Value: "/health",
+		},
+		{
+			ID:    "3",
+			Name:  "Docker Image",
+			Type:  "string",
+			Value: "",
 		},
 	},
 }
@@ -65,8 +79,9 @@ func (service *v1Service) CreateService(details *CreateServiceBody) (*GetService
 	}
 
 	newService := GetSingleServiceResponse{
-		ID:   uuid.NewString(),
-		Name: details.Name,
+		ID:           uuid.NewString(),
+		Name:         details.Name,
+		Environments: []EnvironmentStub{},
 		DeploymentSettings: DeploySettings{
 			ID:       uuid.NewString(),
 			Type:     details.Type,
@@ -82,6 +97,41 @@ func (service *v1Service) CreateService(details *CreateServiceBody) (*GetService
 		Visibility:   "Public", // TODO: temporary
 		Environments: []EnvironmentStub{},
 	}, nil
+}
+
+func (service *v1Service) GetService(id string) (*GetSingleServiceResponse, error) {
+	for _, value := range service.inMemoryServices {
+		if value.ID == id {
+			return &value, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func (service *v1Service) CreateEnvironment(id string, environment *CreateEnvironmentBody) (*EnvironmentStub, error) {
+	var match *GetSingleServiceResponse
+	index := 0
+	for i, s := range service.inMemoryServices {
+		if s.ID == id {
+			match = &s
+			index = i
+		}
+	}
+
+	if match == nil {
+		return nil, nil
+	}
+
+	env := EnvironmentStub{
+		ID:     uuid.NewString(),
+		Name:   environment.Name,
+		Status: "new",
+	}
+
+	match.Environments = append(match.Environments, env)
+	service.inMemoryServices[index] = *match
+	return &env, nil
 }
 
 func (service *v1Service) GetServices() ([]GetServiceResponse, error) {

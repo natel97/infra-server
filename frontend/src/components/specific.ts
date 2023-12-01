@@ -1,8 +1,8 @@
 import styled from "styled-components";
-import { colorVariants } from "./generic";
+import { glowVariants, colorVariants } from "./generic";
 
 type GlowProps = {
-  glow?: keyof typeof colorVariants;
+  glow?: keyof typeof glowVariants;
 };
 
 export const GlowingListItem = styled.div<GlowProps>`

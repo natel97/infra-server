@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import styled, { createGlobalStyle } from "styled-components";
 
 export const colorVariants = {
   red: "#C53102",
@@ -8,7 +8,38 @@ export const colorVariants = {
   darkBlue: "#000714",
   primary: "#18171B",
   white: "white",
+  gray: "#606060",
 };
+
+export const glowVariants = {
+  red: "#C5310233",
+  green: "#0E610033",
+  blue: "#0A2A6633",
+  yellow: "#BFDE0033",
+  darkBlue: "#00071433",
+  primary: "#18171B33",
+  white: "#FFFFFF33",
+  gray: "#60606033",
+};
+
+export const GlobalStyles = createGlobalStyle`
+  html {
+    background: ${colorVariants.darkBlue};
+    height: 100%;
+    width: 100%;
+  }
+
+  body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+  }
+
+  h1, h2, h3, h4, h5 {
+    margin: 0;
+    color: ${colorVariants.white}
+  }
+  `;
 
 const fontSize = {
   sm: "12px",

@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mui/styled-engine-sc": "^6.0.0-alpha.6",
+    "@mui/system": "^5.14.18",
     "@reduxjs/toolkit": "^1.9.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
