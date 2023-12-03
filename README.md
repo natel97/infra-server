@@ -4,21 +4,21 @@
 
 A simpler way to manage your services
 
-## Supported Services
+## Dream State - The Story
 
-This is compatible with the following:
+I want to host on my Raspberry Pi. But I want things to be updated seamlessly. No hassle, no fuss. I push code, code is shown on my website, or any website I purchase.
 
-### Load balancers
+But wait, what if I decide to get into something deep in development? Now I need to create an API, connect databases, file buckets, Redis, etc. UGH this is a lot to connect. Especially if I want to keep to open source an my Pi. The point of having a Raspberry Pi is I only pay for electricity. Not cloud services.
 
-- NGINX
-  - Static Website
-  - Proxy'd Port Forward
+In comes this - a way manage custom services. I can create a service (static website or kubernetes deployment), and manage my website domains that point to a folder in NGINX or proxy forward to an exposed kubernetes deployment. Or maybe I just want an internal API to keep in the shadows, only accessible to other services I've deployed.
+
+Now we're in the weeds. That's a LOT to develop at once. Hence why this is broken into [different phases](docs/ITERATIVE_DEV_STRATEGY.md) (no need for thrashing :D)
 
 ## Getting Started
 
 This requires go and nodejs
 
-You must run a npm build first in the frontend directory (bundles frontend in prod)
+You must run a npm build first in the frontend directory (bundles frontend in prod, embed requires those files to exist)
 
 ```sh
 # ./frontend
@@ -38,26 +38,6 @@ Then navigate to [http://localhost:5173/](http://localhost:5173/). API requests 
 
 The server fowards a static directory (react build) bundled with the application
 
-Some misc config notes
+### UI Sketches (incomplete) for the future
 
-```bash
-sudo useradd system-control
-sudo passwd system-control
-# Enter password to create
-mkdir /home/system-control
-sudo chown -hR system-control /home/system-control
-
-# Grant access to newly created user to manage services
-echo 'system-control ALL = NOPASSWD: /etc/init.d/nginx' | sudo tee -a /etc/sudoers.d/nginx
-
-# Get go command location
-GOEXEC=$(which go)
-su - system-control $VALUE run server.go
-# Enter newly created password
-
-
-```
-
-## ENV
-
-Override environment variables with local.env
+https://www.figma.com/file/aFc0Qj29k4HX9XD93pzXeH/Service-management-UI

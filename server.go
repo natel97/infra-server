@@ -16,6 +16,7 @@ import (
 	"infra-server/config"
 	v1 "infra-server/routes/v1"
 	"infra-server/routes/v1/service"
+	"infra-server/routes/v1/upload"
 	"infra-server/services/dns/cloudflare"
 	"infra-server/services/load-balancer/nginx"
 	"infra-server/utils"
@@ -179,7 +180,11 @@ func main() {
 	})
 
 	nginxService := nginx.NewNginxHandler(cfg)
-	service := service.NewV1Service(cloudflareService, nginxService)
+	fileManager := upload.NewV1Manager(upload.V1FileMangerDeps{
+		Config: *cfg,
+	})
+
+	service := service.NewV1Service(cloudflareService, nginxService, fileManager)
 
 	apiGroup := server.Group("api")
 	server.MaxMultipartMemory = int64(cfg.MaxUploadSize << 20)

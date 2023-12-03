@@ -121,11 +121,72 @@ const DeploymentSettings = ({ settings }) => {
   );
 };
 
+const NewDeploymentSettings = ({ service, open, setOpen }) => {
+  const [environment, setEnvironment] = useState(service?.environments[0]?.id);
+  const [file, setFile] = useState<File | null>(null);
+
+  if (!open) {
+    return null;
+  }
+
+  const onSubmit = () => {
+    if (file === null) return;
+    API.deployZip({ environment, service: service.id, file }).then(() =>
+      setOpen(false)
+    );
+  };
+
+  return (
+    <Modal title="New Deployment" open={open} setOpen={setOpen}>
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        <input
+          type="file"
+          accept=".zip"
+          onChange={(e) => setFile(e.target.files![0])}
+        />
+        <select
+          onChange={(e) => setEnvironment(e.target.value)}
+          value={environment}
+        >
+          {service.environments.map((environment) => (
+            <option value={environment.id}>{environment.name}</option>
+          ))}
+        </select>
+        <Button onClick={onSubmit} background="green">
+          Create
+        </Button>
+      </div>
+    </Modal>
+  );
+};
+const StaticSettings = ({ service }) => {
+  const [createDeployment, setCreateDeployment] = useState(false);
+  return (
+    <div>
+      <NewDeploymentSettings
+        service={service}
+        open={createDeployment}
+        setOpen={setCreateDeployment}
+      />
+      <Button onClick={() => setCreateDeployment(true)}>
+        Create Deployment
+      </Button>
+    </div>
+  );
+};
+
+const SpecificSettings = {
+  "static-website": StaticSettings,
+};
+
 const SpecificDeploymentSettings = ({ service }) => {
+  const CustomSettings = SpecificSettings[service.deploymentSettings.type];
+
   return (
     <GlowingListItem glow="gray">
       <h3>{service.deploymentSettings.type} Settings</h3>
       <DeploymentSettings settings={service.deploymentSettings} />
+      <CustomSettings service={service} />
     </GlowingListItem>
   );
 };

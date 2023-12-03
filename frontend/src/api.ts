@@ -21,6 +21,12 @@ export type GetSingleDeploymentResponse = {
   environments?: EnvironmentStub[];
 };
 
+export type DeployZip = {
+  file: File;
+  environment: string;
+  service: string;
+};
+
 export type CreateDeploymentRequest = {
   name: string;
   type: string;
@@ -39,6 +45,18 @@ export class APIHandler {
 
   getDeploymentByID(id: string): Promise<GetSingleDeploymentResponse> {
     return this.fetchHandler(`/api/v1/service/${id}`).then((val) => val.json());
+  }
+
+  deployZip(deploy: DeployZip): Promise<void> {
+    const data = new FormData();
+    data.append("name", deploy.file.name);
+    data.append("file", deploy.file);
+    data.append("environment", deploy.environment);
+    data.append("service", deploy.service);
+    return this.fetchHandler("/api/v1/upload", {
+      method: "POST",
+      body: data,
+    }).then((response) => response.json());
   }
 
   createEnvironment(id: string, name: string): Promise<void> {

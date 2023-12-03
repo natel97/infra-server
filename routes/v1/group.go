@@ -11,6 +11,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const KB = uint(1024)
+const MB = 1024 * KB
+
 func Handle(route *gin.RouterGroup, cfg *config.ServerConfig, s service.Service) {
 	route.POST("service", func(ctx *gin.Context) {
 		body := &service.CreateServiceBody{}
@@ -79,5 +82,49 @@ func Handle(route *gin.RouterGroup, cfg *config.ServerConfig, s service.Service)
 		ctx.JSON(200, created)
 	})
 
-	upload.Handle(route, cfg)
+	route.POST("/service/:id/url", func(ctx *gin.Context) {
+		var body service.CreateURLBody
+
+		serviceID, exists := ctx.Params.Get("id")
+
+		if !exists {
+			ctx.Status(http.StatusBadRequest)
+			return
+		}
+
+		if err := ctx.ShouldBind(&body); err != nil {
+			ctx.String(http.StatusBadRequest, err.Error())
+			return
+		}
+
+		err := s.CreateURL(serviceID, body)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+		}
+	})
+
+	route.POST("/upload", func(c *gin.Context) {
+		var bindFile upload.BindFile
+
+		if c.Request.ContentLength > int64(cfg.MaxUploadSize*MB) {
+			c.Status(http.StatusRequestEntityTooLarge)
+			return
+		}
+
+		if err := c.ShouldBind(&bindFile); err != nil {
+			c.String(http.StatusBadRequest, err.Error())
+			return
+		}
+
+		file := bindFile.File
+		err := s.UploadAndPromoteVersion(bindFile.Service, bindFile.Environment, file)
+
+		if err != nil {
+			fmt.Println(err)
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+
+		c.Status(201)
+	})
 }

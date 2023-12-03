@@ -2,8 +2,10 @@ package service
 
 import (
 	"errors"
+	"infra-server/routes/v1/upload"
 	"infra-server/services/dns"
 	loadbalancer "infra-server/services/load-balancer"
+	"mime/multipart"
 
 	"github.com/google/uuid"
 )
@@ -13,6 +15,14 @@ type Service interface {
 	GetServices() ([]GetServiceResponse, error)
 	GetService(id string) (*GetSingleServiceResponse, error)
 	CreateEnvironment(id string, environment *CreateEnvironmentBody) (*EnvironmentStub, error)
+	UploadAndPromoteVersion(deploymentID string, environmentID string, file *multipart.FileHeader) error
+	SetCurrentVersion(deploymentID string, environmentID string, deployID string) error
+	CreateURL(serviceID string, domain CreateURLBody) error
+}
+
+func (service *v1Service) CreateURL(serviceID string, domain CreateURLBody) error {
+	// TODO: do
+	return nil
 }
 
 var SettingsForType = map[string][]DeploySetting{
@@ -49,14 +59,16 @@ var SettingsForType = map[string][]DeploySetting{
 type v1Service struct {
 	// services map[string]service
 	dnsService          dns.Service
+	fileHandler         upload.FileManager
 	loadBalancerService loadbalancer.Service
 	inMemoryServices    []GetSingleServiceResponse
 }
 
-func NewV1Service(dnsService dns.Service, loadBalancerService loadbalancer.Service) *v1Service {
+func NewV1Service(dnsService dns.Service, loadBalancerService loadbalancer.Service, fileHandler upload.FileManager) *v1Service {
 	return &v1Service{
 		dnsService:          dnsService,
 		loadBalancerService: loadBalancerService,
+		fileHandler:         fileHandler,
 		inMemoryServices:    []GetSingleServiceResponse{},
 	}
 }
@@ -132,6 +144,41 @@ func (service *v1Service) CreateEnvironment(id string, environment *CreateEnviro
 	match.Environments = append(match.Environments, env)
 	service.inMemoryServices[index] = *match
 	return &env, nil
+}
+
+func (service *v1Service) UploadAndPromoteVersion(deploymentID string, environmentID string, file *multipart.FileHeader) error {
+	version, err := service.fileHandler.SaveNewVersion(deploymentID, environmentID, file)
+	if err != nil {
+		return err
+	}
+
+	for deploymentIndex, deploy := range service.inMemoryServices {
+		if deploy.ID != deploymentID {
+			continue
+		}
+		deploy.AvailableDeployments = append(deploy.AvailableDeployments, AvailableDeployment{
+			ID:        version.ID,
+			Timestamp: *version.DateUploaded,
+		})
+
+		service.inMemoryServices[deploymentIndex] = deploy
+	}
+	err = service.SetCurrentVersion(deploymentID, environmentID, version.ID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (service *v1Service) SetCurrentVersion(deploymentID string, environmentID string, deployID string) error {
+	err := service.fileHandler.PromoteVersion(deploymentID, environmentID, deployID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (service *v1Service) GetServices() ([]GetServiceResponse, error) {

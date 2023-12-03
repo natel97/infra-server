@@ -1,6 +1,14 @@
 package service
 
-import "time"
+import (
+	"time"
+)
+
+type CreateURLBody struct {
+	EnvironmentID string `json:"environmentId"`
+	Domain        string `json:"domain"`
+	SubDomain     string `json:"subDomain"`
+}
 
 type EnvironmentStub struct {
 	ID         string `json:"id"`
@@ -24,9 +32,13 @@ type EnvironmentDeployment struct {
 }
 
 type DeployLog struct {
-	ID           string    `json:"id"`
-	Timestamp    time.Time `json:"timestamp"`
-	Environments []string
+	AvailableDeploymentID string
+	Environments          []string `json:"environments"`
+}
+
+type AvailableDeployment struct {
+	ID        string    `json:"id"`
+	Timestamp time.Time `json:"timestamp"`
 }
 
 type DeploySetting struct {
@@ -45,6 +57,7 @@ type DeploySettings struct {
 type GetSingleServiceResponse struct {
 	ID                   string                `json:"id"`
 	Name                 string                `json:"name"`
+	AvailableDeployments []AvailableDeployment `json:"availableDeployments"`
 	Environments         []EnvironmentStub     `json:"environments"`
 	DeploymentSettings   DeploySettings        `json:"deploymentSettings"`
 	DeployHistory        []DeployLog           `json:"deployHistory"`
