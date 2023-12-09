@@ -76,6 +76,7 @@ func Handle(route *gin.RouterGroup, cfg *config.ServerConfig, s service.Service)
 		created, err := s.CreateEnvironment(id, body)
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, err)
+			return
 		}
 
 		// nginxConfig := s.CreateService(body)
@@ -83,7 +84,7 @@ func Handle(route *gin.RouterGroup, cfg *config.ServerConfig, s service.Service)
 	})
 
 	route.POST("/service/:id/url", func(ctx *gin.Context) {
-		var body service.CreateURLBody
+		body := service.CreateURLBody{}
 
 		serviceID, exists := ctx.Params.Get("id")
 
@@ -92,15 +93,19 @@ func Handle(route *gin.RouterGroup, cfg *config.ServerConfig, s service.Service)
 			return
 		}
 
-		if err := ctx.ShouldBind(&body); err != nil {
+		err := ctx.ShouldBindJSON(&body)
+		if err != nil {
 			ctx.String(http.StatusBadRequest, err.Error())
 			return
 		}
 
-		err := s.CreateURL(serviceID, body)
+		err = s.CreateURL(serviceID, body)
 		if err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
+			return
 		}
+
+		ctx.JSON(http.StatusCreated, "success")
 	})
 
 	route.POST("/upload", func(c *gin.Context) {
@@ -125,6 +130,16 @@ func Handle(route *gin.RouterGroup, cfg *config.ServerConfig, s service.Service)
 			return
 		}
 
-		c.Status(201)
+		c.JSON(http.StatusCreated, "created")
+	})
+
+	route.GET("/domain", func(ctx *gin.Context) {
+		domains, err := s.GetDomains()
+		if err != nil {
+			ctx.Status(500)
+			return
+		}
+
+		ctx.JSON(200, domains)
 	})
 }

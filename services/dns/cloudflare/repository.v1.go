@@ -66,6 +66,20 @@ func (repo *v1Repository) GetZones() ([]Zone, error) {
 	return zones, nil
 }
 
+func (repo *v1Repository) CreateZone(zone Zone) error {
+	dbZone := &cloudflareZone{
+		ID:   zone.ID,
+		Name: zone.Domain,
+	}
+	err := repo.db.FirstOrCreate(&dbZone, "id = ?", zone.ID).Error
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (repo *v1Repository) GetRecords(zone string) ([]DNSRecord, error) {
 	dbRecords := []cloudflareDNSRecord{}
 	tx := repo.db.Where("id = ?", zone).Scan(&dbRecords)
@@ -115,10 +129,6 @@ func (repo *v1Repository) DeleteZone() {
 }
 
 func (repo *v1Repository) DeleteRecord() {
-
-}
-
-func (repo *v1Repository) CreateZone() {
 
 }
 

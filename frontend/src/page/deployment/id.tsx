@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { GlowingListItem } from "../../components/specific";
 import { Box } from "@mui/system";
-import { API } from "../../api";
+import { API, GetDomainResponse } from "../../api";
 import { Button } from "../../components/generic";
 import styled from "styled-components";
+import { useSelector } from "react-redux";
 
 const ListOfEnvironments = ({ environments }) => {
   if (environments === null || environments.length === 0) {
@@ -30,8 +31,8 @@ const ListOfEnvironments = ({ environments }) => {
 const Backdrop = styled.div`
   width: 100vw;
   height: 100vh;
-  position: absolute;
-  top: 0;
+  position: fixed;
+  bottom: 0;
   left: 0;
   background: #000000cc;
   display: flex;
@@ -131,9 +132,10 @@ const NewDeploymentSettings = ({ service, open, setOpen }) => {
 
   const onSubmit = () => {
     if (file === null) return;
-    API.deployZip({ environment, service: service.id, file }).then(() =>
-      setOpen(false)
-    );
+    API.deployZip({ environment, service: service.id, file }).then(() => {
+      setOpen(false);
+      setFile(null);
+    });
   };
 
   return (
@@ -159,6 +161,7 @@ const NewDeploymentSettings = ({ service, open, setOpen }) => {
     </Modal>
   );
 };
+
 const StaticSettings = ({ service }) => {
   const [createDeployment, setCreateDeployment] = useState(false);
   return (
@@ -232,10 +235,84 @@ const Provisions = ({ service }) => {
   );
 };
 
+const NewDomainModal = ({ open, setOpen, deploymentID, environments }) => {
+  const domains = useSelector((state) => state?.deployments?.domains);
+  const [subdomain, setSubdomain] = useState("");
+  const [environment, setEnvironment] = useState(environments[0]?.id);
+  const [domain, setDomain] = useState(domains[0]?.id);
+  useEffect(() => {
+    setDomain(domains[0]?.id);
+  }, [domains]);
+
+  if (domains.length === 0) {
+    return <div>No domains available :/</div>;
+  }
+
+  const createURL = () => {
+    API.createURL(deploymentID, {
+      domainId: domain,
+      environmentId: environment,
+      name: "todo: do",
+      subdomain,
+    }).then(() => {
+      setSubdomain("");
+    });
+  };
+
+  return (
+    <Modal title="New Domain" open={open} setOpen={setOpen}>
+      <div>
+        <label htmlFor="subdomain">Subdomain</label>
+        <input
+          value={subdomain}
+          onChange={(e) => setSubdomain(e.target.value)}
+          id="subdomain"
+          type="text"
+        />
+      </div>
+      <div>
+        Domain:{" "}
+        <select onChange={(e) => setDomain(e.target.value)}>
+          {domains.map((domain: GetDomainResponse) => (
+            <option value={domain.id}>{domain.url}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        New URL: {subdomain || "<web>"}.
+        {domains.find((d) => d.id === domain).url}
+      </div>
+      <div>
+        Environment:{" "}
+        <select
+          value={environment}
+          onChange={(e) => setEnvironment(e.target.value)}
+        >
+          {environments.map((env) => (
+            <option value={env.id}>{env.name}</option>
+          ))}
+        </select>
+      </div>
+      <Button onClick={() => createURL()} background="green">
+        Create Domain
+      </Button>
+    </Modal>
+  );
+};
+
 const Domains = ({ service }) => {
+  const [newDomainOpen, setNewDomainOpen] = useState(false);
   return (
     <GlowingListItem glow="gray">
       <h3>Domains</h3>
+      <hr />
+      <Button onClick={() => setNewDomainOpen(true)}>New Domain</Button>
+      <NewDomainModal
+        deploymentID={service.id}
+        open={newDomainOpen}
+        setOpen={setNewDomainOpen}
+        environments={service.environments}
+      />
     </GlowingListItem>
   );
 };

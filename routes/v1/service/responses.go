@@ -6,8 +6,9 @@ import (
 
 type CreateURLBody struct {
 	EnvironmentID string `json:"environmentId"`
-	Domain        string `json:"domain"`
-	SubDomain     string `json:"subDomain"`
+	Name          string `json:"name"`
+	DomainID      string `json:"domainId"`
+	Subdomain     string `json:"subdomain"`
 }
 
 type EnvironmentStub struct {

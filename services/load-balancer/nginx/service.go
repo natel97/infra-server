@@ -3,9 +3,9 @@ package nginx
 import (
 	"errors"
 	"fmt"
-	"os"
 
 	"infra-server/config"
+	"infra-server/services/adapters"
 	"infra-server/services/load-balancer/nginx/filegen"
 )
 
@@ -13,20 +13,10 @@ type FileGen interface {
 	GenerateFile(*config.WebsiteConfig) string
 }
 
-type fsHandler interface {
-	CreateFile(name string, content string) error
-}
-
 type nginx struct {
 	config            *config.ServerConfig
 	loaders           map[string]FileGen
-	fileSystemHandler fsHandler
-}
-
-type realFSHandler struct{}
-
-func (handler *realFSHandler) CreateFile(name string, content string) error {
-	return os.WriteFile(name, []byte(content), 0644)
+	fileSystemHandler adapters.FileSystemHandler
 }
 
 func NewNginxHandler(config *config.ServerConfig) *nginx {
@@ -34,7 +24,9 @@ func NewNginxHandler(config *config.ServerConfig) *nginx {
 	balancer.loaders = map[string]FileGen{}
 	balancer.loaders["static-website"] = filegen.NewStaticSiteGenerator(config)
 	balancer.loaders["proxy"] = filegen.NewProxyGenerator(config)
-	balancer.fileSystemHandler = &realFSHandler{}
+	// TODO: enable mock add to deps
+	balancer.fileSystemHandler = adapters.NewRealFileSystemHandler()
+	balancer.config = config
 	return &balancer
 }
 
@@ -45,8 +37,30 @@ func (n *nginx) Create(config *config.WebsiteConfig) error {
 	}
 
 	file := loader.GenerateFile(config)
-	fileName := fmt.Sprintf("%s/%s.conf", n.config.LoadBalancerDirectory, config.Domain)
+	fileName := fmt.Sprintf("%s/%s.conf", n.config.NginxSitesAvailable, config.Domain)
 	err := n.fileSystemHandler.CreateFile(fileName, file)
+	if err != nil {
+		return err
+	}
+
+	enabledPath := n.config.NginxSitesEnabled
+
+	if n.config.NginxSitesEnabled[0] == "."[0] {
+		cwd, err := n.fileSystemHandler.GetCWD()
+		if err != nil {
+			return err
+		}
+		enabledPath = fmt.Sprintf("%s%s", cwd, enabledPath[1:])
+	}
+
+	linkFile := fmt.Sprintf("%s/%s.conf", enabledPath, config.Domain)
+
+	err = n.fileSystemHandler.CopyFile(fileName, linkFile)
+	if err != nil {
+		return err
+	}
+
+	err = n.fileSystemHandler.RunCommand(n.config.NginxRestartCommand)
 	if err != nil {
 		return err
 	}

@@ -1,7 +1,9 @@
 import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
-import { Provider } from "react-redux";
+import { Provider, useDispatch } from "react-redux";
 import store from "./redux/store";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
+import { API } from "./api";
+import { setDomains } from "./redux/deployment.reducer";
 
 const Deployments = lazy(() => import("./page/home"));
 const NewDeployment = lazy(() => import("./page/new"));
@@ -19,6 +21,7 @@ const App = () => {
   return (
     <div>
       <Provider store={store}>
+        <GenerateInitialState />
         <BrowserRouter>
           <Routes>
             <Route
@@ -51,6 +54,16 @@ const App = () => {
       </Provider>
     </div>
   );
+};
+
+const GenerateInitialState = () => {
+  const dispatch = useDispatch();
+  useEffect(() => {
+    if (!dispatch) return;
+
+    API.getDomains().then((domains) => dispatch(setDomains(domains)));
+  }, [dispatch]);
+  return null;
 };
 
 export default App;

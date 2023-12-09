@@ -6,6 +6,11 @@ export type GetDeploymentsResponse = {
   environments?: EnvironmentStub[];
 };
 
+export type GetDomainResponse = {
+  url: string;
+  id: string;
+};
+
 export type EnvironmentStub = {
   id: string;
   name: string;
@@ -30,6 +35,13 @@ export type DeployZip = {
 export type CreateDeploymentRequest = {
   name: string;
   type: string;
+};
+
+export type CreateURLRequest = {
+  environmentId: string;
+  domainId: string;
+  subdomain: string;
+  name: string;
 };
 
 export class APIHandler {
@@ -73,6 +85,17 @@ export class APIHandler {
       body: JSON.stringify(body),
       method: "POST",
     }).then((val) => val.json());
+  }
+
+  getDomains(): Promise<GetDomainResponse[]> {
+    return this.fetchHandler("/api/v1/domain").then((val) => val.json());
+  }
+
+  createURL(deploymentID: string, body: CreateURLRequest): Promise<void> {
+    return this.fetchHandler(`/api/v1/service/${deploymentID}/url`, {
+      body: JSON.stringify(body),
+      method: "POST",
+    }).then((res) => res.json());
   }
 }
 

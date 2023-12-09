@@ -18,6 +18,6 @@ type Repository interface {
 	UpdateRecord()
 	DeleteZone()
 	DeleteRecord()
-	CreateZone()
+	CreateZone(Zone) error
 	CreateRecord()
 }

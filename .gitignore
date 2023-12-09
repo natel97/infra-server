@@ -4,3 +4,10 @@ local.env
 
 data.db
 infra-server
+
+# nginx
+sites-enabled
+sites-available
+sites-deployed
+site-deployments
+__debug*

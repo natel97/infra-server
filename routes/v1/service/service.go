@@ -2,6 +2,8 @@ package service
 
 import (
 	"errors"
+	"fmt"
+	"infra-server/config"
 	"infra-server/routes/v1/upload"
 	"infra-server/services/dns"
 	loadbalancer "infra-server/services/load-balancer"
@@ -18,10 +20,51 @@ type Service interface {
 	UploadAndPromoteVersion(deploymentID string, environmentID string, file *multipart.FileHeader) error
 	SetCurrentVersion(deploymentID string, environmentID string, deployID string) error
 	CreateURL(serviceID string, domain CreateURLBody) error
+	GetDomains() ([]dns.Domain, error)
+}
+
+func (service *v1Service) GetDomains() ([]dns.Domain, error) {
+	domains := service.dnsService.GetDomains()
+	// Error handling likely needed in the future
+	return domains, nil
+}
+
+func (service *v1Service) getServiceByID(id string) (int, GetSingleServiceResponse) {
+	for i, service := range service.inMemoryServices {
+		if service.ID == id {
+			return i, service
+		}
+	}
+	return -1, GetSingleServiceResponse{}
 }
 
 func (service *v1Service) CreateURL(serviceID string, domain CreateURLBody) error {
-	// TODO: do
+	i, matchingService := service.getServiceByID(serviceID)
+	if i == -1 {
+		return errors.New("bad id")
+	}
+
+	remoteDomain, err := service.dnsService.GetDomain(domain.DomainID)
+	if err != nil {
+		return err
+	}
+
+	fullDomain := fmt.Sprintf("%s.%s", domain.Subdomain, remoteDomain.URL)
+
+	fmt.Println(fullDomain)
+
+	service.loadBalancerService.Create(&config.WebsiteConfig{
+		Domain:   fullDomain,
+		Comments: "TOOD: Implement",
+		Name:     "name",
+		LoadBalancer: config.LoadBalancer{
+			Type: matchingService.DeploymentSettings.Type,
+			StaticConfig: config.StaticConfig{
+				IsSPA: true,
+			},
+		},
+	})
+	// service.loadBalancerService.Create()
 	return nil
 }
 

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"infra-server/config"
+	"infra-server/services/dns"
 
 	"gorm.io/gorm"
 )
@@ -22,16 +23,12 @@ type v1Service struct {
 	config     *ServiceConfig
 }
 
-func getCloudflareV1Service() Service {
-	return &v1Service{}
-}
-
-// func (service *v1Service) CreateRecord() error {
-// 	return nil
-// }
-
-func (service *v1Service) Create(cfg *config.WebsiteConfig) error {
+func (service *v1Service) CreateSubdomain(cfg *config.WebsiteConfig) error {
 	domains, err := service.repository.GetZones()
+
+	if err != nil {
+		return err
+	}
 
 	var match *Zone
 	for _, domain := range domains {
@@ -41,7 +38,7 @@ func (service *v1Service) Create(cfg *config.WebsiteConfig) error {
 	}
 
 	if match == nil {
-		return errors.New("No matching domain")
+		return errors.New("no matching domain")
 	}
 
 	subdomain, err := service.repository.GetRecords(match.ID)
@@ -49,7 +46,7 @@ func (service *v1Service) Create(cfg *config.WebsiteConfig) error {
 		return err
 	}
 	if len(subdomain) > 0 {
-		return errors.New("Domain exists")
+		return errors.New("domain exists")
 	}
 
 	err = service.api.CreateRecord(match.ID, dnsRecordAPI{
@@ -69,8 +66,8 @@ func (service *v1Service) Create(cfg *config.WebsiteConfig) error {
 	return nil
 }
 
-func (service *v1Service) GetAll() ([]config.WebsiteConfig, error) {
-	records, err := service.repository.GetAllRecords()
+func (service *v1Service) GetSubdomains(id string) ([]config.WebsiteConfig, error) {
+	records, err := service.repository.GetRecords(id)
 
 	if err != nil {
 		return nil, err
@@ -87,24 +84,59 @@ func (service *v1Service) GetAll() ([]config.WebsiteConfig, error) {
 	return sites, nil
 }
 
-// func (service *v1Service) UpdateRecord() error {
-// 	return nil
-// }
+func (service *v1Service) GetDomains() []dns.Domain {
+	zones, err := service.repository.GetZones()
+	if err != nil {
+		return []dns.Domain{}
+	}
 
-// func (service *v1Service) DeleteRecord() error {
-// 	return nilServerConfig
-// }
+	domains := []dns.Domain{}
+	for _, zone := range zones {
+		domains = append(domains, dns.Domain{
+			ID:  zone.ID,
+			URL: zone.Domain,
+		})
+	}
 
-// func (service *v1Service) GetRecords() ([]DNSRecord, error) {
-// 	records, err := service.repository.GetRecords()
-// 	return records, err
-// }
+	return domains
+}
+
+func (service *v1Service) GetDomain(id string) (dns.Domain, error) {
+	zones, err := service.repository.GetZones()
+	if err != nil {
+		return dns.Domain{}, err
+	}
+
+	for _, zone := range zones {
+		if zone.ID == id {
+			return dns.Domain{
+				ID:  zone.ID,
+				URL: zone.Domain,
+			}, nil
+		}
+	}
+
+	// todo temporary logic, create repo query
+	return dns.Domain{}, errors.New("not found")
+}
 
 func (service *v1Service) refresh() error {
 	fmt.Println("Refreshing domains")
 	zones, err := service.api.GetZones()
+	fmt.Println(zones)
 	if err != nil {
 		return err
+	}
+
+	for _, zone := range zones {
+		err := service.repository.CreateZone(Zone{
+			ID:     zone.ID,
+			Domain: zone.Name,
+		})
+
+		if err != nil {
+			return err
+		}
 	}
 
 	for _, zone := range zones {

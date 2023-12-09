@@ -1,0 +1,12 @@
+services:
+  nginx:
+    image: nginx:1-alpine
+    volumes:
+    - ./sites-enabled:/etc/nginx/sites-enabled
+    - ./sites-available:/etc/nginx/sites-available
+    - ./var/deployed-sites:/etc/nginx/sites-deployed
+    ports:
+    - "8082:80"
+    environment:
+    - NGINX_HOST=foobar.com
+    - NGINX_PORT=80
